@@ -1,7 +1,5 @@
 package testng;
 
-import com.beust.ah.A;
-import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -24,6 +22,8 @@ public class TestCart {
     private static final String HOME_IVY = "#header > div > div.site-brand > a > img";
     static List<String> productsInCart;
     static int priceTotalInCart;
+    private static final String SUCCESS_ADD_CART = "Thêm vào giỏ hàng thành công !";
+    private static final String SUCCESS_REMOVE_CART = "Đã xoá sản phẩm !";
 
 
     @BeforeTest
@@ -37,12 +37,12 @@ public class TestCart {
 
     @Test(priority = 0)
     void checkInformationCartInit(){
-        checkInformationOfCart();
+        checkInformationOfCartMiniCart();
     }
     @Test(priority = 1)
     void checkAddItem() throws InterruptedException{
         //check cart add Item
-        checkInformationOfCart();
+        checkInformationOfCartMiniCart();
         List<String> itemsBeforeAdd = productsInCart;
         Integer priceTotalBeforeAdd =priceTotalInCart;
         WebElement homeBack = driver.findElement(By.cssSelector(HOME_IVY));
@@ -67,17 +67,11 @@ public class TestCart {
         sizeL.click();
 
         // Xử lý thông báo (ví dụ: in nó ra console)
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
-        try{
-            WebElement successMessage = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("notify__add-to-cart--success")));
-        }catch (Exception e){
-            e.printStackTrace();
-            fail();
-        }
+        checkAlert(SUCCESS_ADD_CART,"notify__add-to-cart--success");
         Thread.sleep(1000);
 
         // check xem item add
-        checkInformationOfCart();
+        checkInformationOfCartMiniCart();
         List<String> itemsAfter = productsInCart;
 //        int priceTotalAfter = priceTotalInCart;
         // check item add in cart before add
@@ -88,8 +82,8 @@ public class TestCart {
     }
 
     @Test(priority = 2)
-    void checkButtonIncreaseItem() throws InterruptedException {
-        checkInformationOfCart();
+    void checkButtonIncreaseItemInMiniCart() throws InterruptedException {
+        checkInformationOfCartMiniCart();
         List<String> itemsBeforeAdd = productsInCart;
         if (itemsBeforeAdd.size()==0) success();
 
@@ -100,19 +94,23 @@ public class TestCart {
         WebElement clickInCrease = driver.findElement(By.cssSelector(ConstantCssSelector.CartMini.ITEM_INCREASE));
         checkWebElement(clickInCrease);
         clickInCrease.click();
-        Thread.sleep(2000);
+
+        // Xử lý thông báo (ví dụ: in nó ra console)
+        checkAlert(SUCCESS_ADD_CART,"toast-message");
+        Thread.sleep(1000);
 
 
-        checkInformationOfCart();
+        checkInformationOfCartMiniCart();
         List<String> itemsAfter = productsInCart;
         long countBefore = itemsBeforeAdd.stream().filter(item->item.equals(nameProductAddCart.trim())).count();
         long countAfter = itemsAfter.stream().filter(item->item.equals(nameProductAddCart.toString())).count();
         if (countBefore+1!=countAfter) fail();
         success();
     }
+
     @Test(priority = 3)
-    void checkButtonDecreaseItem() throws InterruptedException {
-        checkInformationOfCart();
+    void checkButtonDecreaseItemInMiniCart() throws InterruptedException {
+        checkInformationOfCartMiniCart();
         List<String> itemsBeforeAdd = productsInCart;
         if (itemsBeforeAdd.size()==0) success();
 
@@ -125,8 +123,10 @@ public class TestCart {
         clickDeCrease.click();
         Thread.sleep(2000);
 
+        checkAlert(SUCCESS_REMOVE_CART,"toast-message");
+        Thread.sleep(1000);
 
-        checkInformationOfCart();
+        checkInformationOfCartMiniCart();
         List<String> itemsAfter = productsInCart;
         long countBefore = itemsBeforeAdd.stream().filter(item->item.equals(nameProductAddCart.trim())).count();
         long countAfter = itemsAfter.stream().filter(item->item.equals(nameProductAddCart.toString())).count();
@@ -201,7 +201,7 @@ public class TestCart {
 
         return priceDouble.replaceAll("\\.","");
     }
-    void checkInformationOfCart(){
+    void checkInformationOfCartMiniCart(){
         // kiem tra so luong san pham
         String numberItem = getNumberItemInCart();
         List<String> titleItem = getItemsInCart();
@@ -228,6 +228,16 @@ public class TestCart {
            static final String ITEM_NAME_CSS = "#header > div > div.right-header > div > div.item.item-cart > div > div.main-action > div:nth-child(1) > div.info-product-cart > h3 > a";
            static final String ITEM_DECREASE = "#header > div > div.right-header > div > div.item.item-cart > div > div.main-action > div:nth-child(1) > div.info-product-cart > div.info-price-mini.d-flex > div.info-price-quantity.d-flex > div.price-quantity-minus.price-quantity > i";
            static final String ITEM_INCREASE = "#header > div > div.right-header > div > div.item.item-cart > div > div.main-action > div:nth-child(1) > div.info-product-cart > div.info-price-mini.d-flex > div.info-price-quantity.d-flex > div.price-quantity-plus.price-quantity > i";
+        }
+    }
+    void checkAlert(String alert,String className){
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
+        try{
+            WebElement successMessage = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(className)));
+            if (! alert.equals(successMessage.getText().trim())) fail();
+        }catch (Exception e){
+            e.printStackTrace();
+            fail();
         }
     }
 }
